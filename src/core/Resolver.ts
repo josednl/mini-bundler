@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import { dirname } from 'node:path';
+import { normalizePath } from '../utils/path.js';
 
 export interface ResolveResult {
   path: string | undefined;
@@ -42,7 +43,7 @@ export class Resolver {
 
     if (result.resolvedModule) {
       return {
-        path: result.resolvedModule.resolvedFileName,
+        path: normalizePath(result.resolvedModule.resolvedFileName),
         isExternal: result.resolvedModule.isExternalLibraryImport ?? false,
       };
     }

@@ -142,8 +142,8 @@ The bundler should support:
 ## Roadmap
 
 - [x] **Project Bootstrap**: Configure TypeScript, Vitest, ESM, and CLI structure.
-- [ ] **Core Bundler**: Build the basic dependency graph and single-file bundling pipeline.
-- [ ] **TypeScript Transpilation**: Transpile TypeScript source files into JavaScript.
+- [x] **Core Bundler**: Build the basic dependency graph and single-file bundling pipeline.
+- [x] **TypeScript Transpilation**: Transpile TypeScript source files into JavaScript.
 - [ ] **ESM & CommonJS Support**: Parse and bundle both module systems.
 - [ ] **Plugin System**: Implement lifecycle hooks and plugin container.
 - [ ] **Output Formats**: Add ESM and CommonJS emitters.
@@ -165,3 +165,7 @@ The bundler should support:
 - [2026-05-12]: Initial Project Definition
 -> Reason: Established the architectural foundations and educational goals for the mini bundler
 -> Implication: Future development should prioritize clarity, modularity, and incremental learning over production-level complexity.
+
+- [2026-05-12]: Core Architecture Implemented
+-> Reason: Completed the Module Graph, Resolver, and Transformer using the TypeScript Compiler API.
+-> Implication: The bundler can now recursively discover and transpile dependencies.
