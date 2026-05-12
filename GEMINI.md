@@ -144,9 +144,9 @@ The bundler should support:
 - [x] **Project Bootstrap**: Configure TypeScript, Vitest, ESM, and CLI structure.
 - [x] **Core Bundler**: Build the basic dependency graph and single-file bundling pipeline.
 - [x] **TypeScript Transpilation**: Transpile TypeScript source files into JavaScript.
-- [ ] **ESM & CommonJS Support**: Parse and bundle both module systems.
+- [x] **ESM & CommonJS Support**: Parse and bundle both module systems (via TS API).
 - [x] **Plugin System**: Implement lifecycle hooks and plugin container.
-- [ ] **Output Formats**: Add ESM and CommonJS emitters.
+- [x] **Output Formats**: Add ESM and CommonJS emitters (Basic CJS runtime).
 - [ ] **Asset Handling**: Support JSON, CSS, and static assets.
 - [ ] **Tree Shaking**: Remove unused exports/imports.
 - [ ] **Source Maps**: Generate source maps for debugging.
@@ -158,9 +158,13 @@ The bundler should support:
 - [ ] **Browser Compatibility**: Ensure browser-ready output formats.
 - [ ] **Performance Improvements**: Add caching and incremental rebuild strategies.
 - [ ] **Developer Tooling**: Improve CLI UX and debugging utilities.
-- [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
+- [x] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-12]: Bundle Generation (Emitter) Implemented
+-> Reason: Added an Emitter with a CJS-style runtime to generate functional single-file bundles.
+-> Implication: The project is now a working bundler capable of producing executable output from TypeScript sources.
 
 - [2026-05-12]: Plugin System Integrated
 -> Reason: Implemented a hook-based plugin system (resolveId, load, transform) to allow extensibility.

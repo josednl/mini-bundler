@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { Bundler } from './core/Bundler.js';
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
@@ -13,8 +14,9 @@ Usage:
   mini-bundler <entry-file> [options]
 
 Options:
-  -h, --help     Show this help message
-  -v, --version  Show version information
+  -h, --help           Show this help message
+  -v, --version        Show version information
+  -o, --outDir <dir>   Output directory (default: dist)
     `);
     process.exit(0);
   }
@@ -37,9 +39,25 @@ Options:
     process.exit(1);
   }
 
+  const outDirIndex = args.indexOf('--outDir') !== -1 ? args.indexOf('--outDir') : args.indexOf('-o');
+  const outDir = outDirIndex !== -1 ? args[outDirIndex + 1] : 'dist';
+
   console.log(`Bundling starting from: ${absoluteEntryPath}`);
   
-  // TODO: Initialize Bundler and start process
+  try {
+    const bundler = new Bundler();
+    await bundler.bundle({
+      entry: absoluteEntryPath,
+      outDir: resolve(process.cwd(), outDir)
+    });
+    console.log(`Bundle generated successfully in ${outDir}/bundle.js`);
+  } catch (error) {
+    console.error('Bundling failed:', error);
+    process.exit(1);
+  }
 }
 
-main();
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
