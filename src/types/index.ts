@@ -9,4 +9,12 @@ export interface Module {
 export interface BundleOptions {
   entry: string;
   outDir?: string;
+  plugins?: Plugin[];
+}
+
+export interface Plugin {
+  name: string;
+  resolveId?(source: string, importer?: string): Promise<string | null | undefined> | string | null | undefined;
+  load?(id: string): Promise<string | null | undefined> | string | null | undefined;
+  transform?(code: string, id: string): Promise<string | null | undefined> | string | null | undefined;
 }
