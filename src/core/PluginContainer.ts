@@ -37,4 +37,15 @@ export class PluginContainer {
     }
     return currentCode;
   }
+
+  async generateBundle(bundle: string): Promise<string> {
+    let currentBundle = bundle;
+    for (const plugin of this.plugins) {
+      if (plugin.generateBundle) {
+        const result = await plugin.generateBundle(currentBundle);
+        if (result) currentBundle = result;
+      }
+    }
+    return currentBundle;
+  }
 }

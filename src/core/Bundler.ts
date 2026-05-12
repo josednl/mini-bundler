@@ -1,8 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { Resolver } from './Resolver.js';
 import { Transformer } from './Transformer.js';
 import { ModuleGraph } from './ModuleGraph.js';
 import { PluginContainer } from './PluginContainer.js';
+import { Emitter } from './Emitter.js';
 import { normalizePath } from '../utils/path.js';
 import type { BundleOptions, Module, Plugin } from '../types/index.js';
 
@@ -11,15 +13,17 @@ export class Bundler {
   private transformer: Transformer;
   private graph: ModuleGraph;
   private pluginContainer: PluginContainer;
+  private emitter: Emitter;
 
   constructor(plugins: Plugin[] = []) {
     this.resolver = new Resolver();
     this.transformer = new Transformer();
     this.graph = new ModuleGraph();
     this.pluginContainer = new PluginContainer(plugins);
+    this.emitter = new Emitter();
   }
 
-  async bundle(options: BundleOptions): Promise<ModuleGraph> {
+  async bundle(options: BundleOptions): Promise<string> {
     const entry = normalizePath(options.entry);
     
     // Initialize plugin container if plugins are provided in options
@@ -28,7 +32,19 @@ export class Bundler {
     }
 
     await this.buildGraph(entry);
-    return this.graph;
+    
+    let bundle = this.emitter.emit(this.graph, entry);
+    
+    // 5. Generate Bundle (Plugins)
+    bundle = await this.pluginContainer.generateBundle(bundle);
+
+    if (options.outDir) {
+      const distDir = normalizePath(options.outDir);
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(join(distDir, 'bundle.js'), bundle);
+    }
+
+    return bundle;
   }
 
   private async buildGraph(entryPath: string): Promise<void> {
@@ -50,7 +66,7 @@ export class Bundler {
       code = await this.pluginContainer.transform(code, currentPath);
 
       // 3. Transform (TS + Dependency Extraction)
-      const { transformedCode, dependencies } = this.transformer.transform(code, currentPath);
+      let { transformedCode, dependencies } = this.transformer.transform(code, currentPath);
 
       const resolvedDependencies = new Set<string>();
 
@@ -67,6 +83,13 @@ export class Bundler {
 
         if (resolvedPath) {
           resolvedDependencies.add(resolvedPath);
+          
+          // Remap the dependency in the transformed code to the resolved absolute path
+          // This is a simple string replacement for educational purposes.
+          const escapedSpecifier = depSpecifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(['"])${escapedSpecifier}\\1`, 'g');
+          transformedCode = transformedCode.replace(regex, `$1${resolvedPath}$1`);
+
           if (!isExternal) {
             queue.push(resolvedPath);
           }

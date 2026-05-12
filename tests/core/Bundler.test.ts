@@ -21,7 +21,8 @@ describe('Bundler & ModuleGraph', () => {
 
   it('should build a complete module graph', async () => {
     const bundler = new Bundler();
-    const graph = await bundler.bundle({ entry: entryFile });
+    await bundler.bundle({ entry: entryFile });
+    const graph = bundler.getGraph();
 
     expect(graph.hasModule(entryFile)).toBe(true);
     expect(graph.hasModule(utilsFile)).toBe(true);
@@ -38,7 +39,8 @@ describe('Bundler & ModuleGraph', () => {
     writeFileSync(b, "import './a.js';");
 
     const bundler = new Bundler();
-    const graph = await bundler.bundle({ entry: a });
+    await bundler.bundle({ entry: a });
+    const graph = bundler.getGraph();
 
     expect(graph.hasModule(a)).toBe(true);
     expect(graph.hasModule(b)).toBe(true);

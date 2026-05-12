@@ -11,7 +11,7 @@ export class Transformer {
   constructor(compilerOptions: ts.CompilerOptions = {}) {
     this.compilerOptions = {
       target: ts.ScriptTarget.ESNext,
-      module: ts.ModuleKind.ESNext,
+      module: ts.ModuleKind.CommonJS,
       ...compilerOptions,
     };
   }

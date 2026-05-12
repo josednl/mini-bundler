@@ -36,7 +36,8 @@ describe('Plugin System', () => {
     };
 
     const bundler = new Bundler([virtualPlugin]);
-    const graph = await bundler.bundle({ entry: entryFile });
+    await bundler.bundle({ entry: entryFile });
+    const graph = bundler.getGraph();
 
     expect(graph.hasModule('virtual:foo')).toBe(true);
     const virtualModule = graph.getModule('virtual:foo');
@@ -54,7 +55,8 @@ describe('Plugin System', () => {
     writeFileSync(entryFile, "export const version = '__VERSION__';");
 
     const bundler = new Bundler([replacePlugin]);
-    const graph = await bundler.bundle({ entry: entryFile });
+    await bundler.bundle({ entry: entryFile });
+    const graph = bundler.getGraph();
 
     const mainModule = graph.getModule(entryFile);
     expect(mainModule?.transformedCode).toContain('1.0.0');
