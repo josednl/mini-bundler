@@ -1,0 +1,31 @@
+{
+  "name": "mini-bundler",
+  "version": "0.1.0",
+  "description": "An educational, minimalist bundler from scratch.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mini-bundler": "dist/index.js"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc",
+    "precommit": "tsc --noEmit && pnpm run test"
+  },
+  "keywords": [
+    "bundler",
+    "typescript",
+    "esm",
+    "educational"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "vitest": "^1.2.1"
+  }
+}
