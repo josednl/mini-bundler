@@ -147,7 +147,7 @@ The bundler should support:
 - [x] **ESM & CommonJS Support**: Parse and bundle both module systems (via TS API).
 - [x] **Plugin System**: Implement lifecycle hooks and plugin container.
 - [x] **Output Formats**: Add ESM and CommonJS emitters (Basic CJS runtime).
-- [ ] **Asset Handling**: Support JSON, CSS, and static assets.
+- [x] **Asset Handling**: Support JSON, CSS, and static assets.
 - [ ] **Tree Shaking**: Remove unused exports/imports.
 - [ ] **Source Maps**: Generate source maps for debugging.
 - [ ] **Watch Mode**: Rebuild automatically on file changes.
@@ -161,6 +161,10 @@ The bundler should support:
 - [x] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-13]: Asset Handling Implemented
+-> Reason: Added support for JSON, CSS, and static assets (images, etc.) via dedicated plugins (jsonPlugin, cssPlugin, assetPlugin).
+-> Implication: The bundler can now handle a wider variety of file types, transforming them into executable JavaScript modules within the bundle.
 
 - [2026-05-12]: Bundle Generation (Emitter) Implemented
 -> Reason: Added an Emitter with a CJS-style runtime to generate functional single-file bundles.

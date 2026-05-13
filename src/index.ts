@@ -2,6 +2,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Bundler } from './core/Bundler.js';
+import { jsonPlugin, cssPlugin, assetPlugin } from './plugins/index.js';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -45,7 +46,11 @@ Options:
   console.log(`Bundling starting from: ${absoluteEntryPath}`);
   
   try {
-    const bundler = new Bundler();
+    const bundler = new Bundler([
+      jsonPlugin(),
+      cssPlugin(),
+      assetPlugin()
+    ]);
     await bundler.bundle({
       entry: absoluteEntryPath,
       outDir: resolve(process.cwd(), outDir)

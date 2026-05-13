@@ -50,9 +50,15 @@ export class Transformer {
     visit(sourceFile);
 
     // Transpile the code
+    // If the file is an asset (e.g., .json, .css) that has been transformed into JS by a plugin,
+    // we need to give it a .ts or .js extension so the TS compiler doesn't fail.
+    const virtualFileName = fileName.match(/\.(ts|js|tsx|jsx)$/) 
+      ? fileName 
+      : `${fileName}.ts`;
+
     const result = ts.transpileModule(code, {
       compilerOptions: this.compilerOptions,
-      fileName,
+      fileName: virtualFileName,
     });
 
     return {
