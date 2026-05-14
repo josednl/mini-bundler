@@ -151,13 +151,7 @@ The bundler should support:
 - [ ] **Tree Shaking**: Remove unused exports/imports.
 - [ ] **Source Maps**: Generate source maps for debugging.
 - [ ] **Watch Mode**: Rebuild automatically on file changes.
-- [ ] **Minification**: Add optional minification pipeline.
-- [ ] **Code Splitting**: Support dynamic imports and chunk generation.
-- [ ] **HMR Foundations**: Explore hot module replacement architecture.
 - [ ] **Plugin Ecosystem**: Create official example plugins.
-- [ ] **Browser Compatibility**: Ensure browser-ready output formats.
-- [ ] **Performance Improvements**: Add caching and incremental rebuild strategies.
-- [ ] **Developer Tooling**: Improve CLI UX and debugging utilities.
 - [x] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
