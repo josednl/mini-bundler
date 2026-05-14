@@ -148,13 +148,17 @@ The bundler should support:
 - [x] **Plugin System**: Implement lifecycle hooks and plugin container.
 - [x] **Output Formats**: Add ESM and CommonJS emitters (Basic CJS runtime).
 - [x] **Asset Handling**: Support JSON, CSS, and static assets.
-- [ ] **Tree Shaking**: Remove unused exports/imports.
+- [x] **Tree Shaking**: Remove unused exports/imports.
 - [ ] **Source Maps**: Generate source maps for debugging.
 - [ ] **Watch Mode**: Rebuild automatically on file changes.
 - [ ] **Plugin Ecosystem**: Create official example plugins.
-- [x] **Documentation & Examples**: Create educational examples explaining bundler internals.
+- [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-14]: Tree Shaking (DCE) Implemented
+-> Reason: Implemented a two-pass Dead Code Elimination strategy that identifies unused exports and removes them using custom TS transformers.
+-> Implication: The bundler now produces smaller, more efficient bundles by only including code that is actually reachable from the entry point. Supports re-exports and namespace imports.
 
 - [2026-05-13]: Asset Handling Implemented
 -> Reason: Added support for JSON, CSS, and static assets (images, etc.) via dedicated plugins (jsonPlugin, cssPlugin, assetPlugin).

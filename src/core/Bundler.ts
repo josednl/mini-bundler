@@ -31,11 +31,19 @@ export class Bundler {
       this.pluginContainer = new PluginContainer(options.plugins);
     }
 
+    // Phase 1: Build Graph and Analyze
     await this.buildGraph(entry);
     
+    // Phase 2: Optimize (Tree Shaking)
+    this.optimize(entry);
+
+    // Phase 3: Final Transformation
+    await this.transformModules();
+
+    // Phase 4: Emit
     let bundle = this.emitter.emit(this.graph, entry);
     
-    // 5. Generate Bundle (Plugins)
+    // Phase 5: Generate Bundle (Plugins)
     bundle = await this.pluginContainer.generateBundle(bundle);
 
     if (options.outDir) {
@@ -65,10 +73,12 @@ export class Bundler {
       // 2. Transform (Plugins)
       code = await this.pluginContainer.transform(code, currentPath);
 
-      // 3. Transform (TS + Dependency Extraction)
-      let { transformedCode, dependencies } = this.transformer.transform(code, currentPath);
+      // 3. Analyze (TS AST)
+      const { dependencies, exports, imports, reExports } = this.transformer.analyze(code, currentPath);
 
       const resolvedDependencies = new Set<string>();
+      const resolvedImports = new Map<string, Set<string>>();
+      const resolvedReExports = new Map<string, { source: string, local: string }>();
 
       for (const depSpecifier of dependencies) {
         // 4. Resolve
@@ -84,11 +94,11 @@ export class Bundler {
         if (resolvedPath) {
           resolvedDependencies.add(resolvedPath);
           
-          // Remap the dependency in the transformed code to the resolved absolute path
-          // This is a simple string replacement for educational purposes.
-          const escapedSpecifier = depSpecifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`(['"])${escapedSpecifier}\\1`, 'g');
-          transformedCode = transformedCode.replace(regex, `$1${resolvedPath}$1`);
+          // Map specifier to absolute path for imports
+          const importedSymbols = imports.get(depSpecifier);
+          if (importedSymbols) {
+            resolvedImports.set(resolvedPath, importedSymbols);
+          }
 
           if (!isExternal) {
             queue.push(resolvedPath);
@@ -98,15 +108,123 @@ export class Bundler {
         }
       }
 
+      // Resolve re-exports to absolute paths
+      for (const [exportName, info] of reExports) {
+        let resolvedPath = await this.pluginContainer.resolveId(info.source, currentPath);
+        if (!resolvedPath) {
+          resolvedPath = this.resolver.resolve(info.source, currentPath).path ?? null;
+        }
+        if (resolvedPath) {
+          resolvedReExports.set(exportName, { source: resolvedPath, local: info.local });
+        }
+      }
+
       const module: Module = {
         id: currentPath,
         originalCode: code,
-        transformedCode,
+        transformedCode: '', // Will be filled in transformModules
         dependencies: resolvedDependencies,
         isExternal: false,
+        exports,
+        imports: resolvedImports,
+        reExports: resolvedReExports,
+        usedExports: new Set(),
       };
 
       this.graph.addModule(module);
+    }
+  }
+
+  private optimize(entryPath: string): void {
+    const entryModule = this.graph.getModule(entryPath);
+    if (!entryModule) return;
+
+    // Phase 1: Mark all exports of the entry module as used
+    entryModule.exports.forEach(e => entryModule.usedExports.add(e));
+    
+    const queue = [entryPath];
+    const processed = new Set<string>();
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (processed.has(currentId)) continue;
+      processed.add(currentId);
+
+      const module = this.graph.getModule(currentId);
+      if (!module) continue;
+
+      // Check all imports of the current module
+      for (const [depId, symbols] of module.imports) {
+        const depModule = this.graph.getModule(depId);
+        if (!depModule) continue;
+
+        let anyImportUsed = false;
+
+        symbols.forEach(sym => {
+          if (sym === '*') {
+            // Namespace import: mark all as used
+            depModule.exports.forEach(e => depModule.usedExports.add(e));
+            anyImportUsed = true;
+          } else {
+            // Check if this symbol is a re-export
+            // Find if any export of the current module re-exports this symbol
+            let isReExportUsed = false;
+            let isNormalImport = true;
+
+            for (const [exportName, info] of module.reExports) {
+              if (info.source === depId && info.local === sym) {
+                isNormalImport = false;
+                if (module.usedExports.has(exportName)) {
+                  isReExportUsed = true;
+                }
+              }
+            }
+
+            if (isNormalImport || isReExportUsed) {
+              depModule.usedExports.add(sym);
+              anyImportUsed = true;
+            }
+          }
+        });
+
+        if (anyImportUsed) {
+          queue.push(depId);
+        }
+      }
+    }
+  }
+
+  private async transformModules(): Promise<void> {
+    for (const module of this.graph.getallModules()) {
+      // Re-transform with tree shaking info
+      const { transformedCode } = this.transformer.transform(module.originalCode, module.id, module.usedExports);
+      
+      let finalCode = transformedCode;
+
+      // Remap dependencies to absolute paths (same as before but now in the final pass)
+      // We need to find the original specifiers. We can reconstruct them or store them.
+      // For now, let's use a simpler approach: the Transformer already has the dependencies.
+      // Actually, we can just do the same regex replacement on the final code.
+      
+      // We need to know which specifier resolved to which path.
+      // Let's re-run the resolution logic or store it in Module.
+      // I'll re-resolve for simplicity in this educational version.
+
+      const { dependencies } = this.transformer.analyze(module.originalCode, module.id);
+      for (const specifier of dependencies) {
+        let resolvedPath = await this.pluginContainer.resolveId(specifier, module.id);
+        if (!resolvedPath) {
+          resolvedPath = this.resolver.resolve(specifier, module.id).path ?? null;
+        }
+
+        if (resolvedPath) {
+          const escapedSpecifier = specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(['"])${escapedSpecifier}\\1`, 'g');
+          finalCode = finalCode.replace(regex, `$1${resolvedPath}$1`);
+        }
+      }
+
+      module.transformedCode = finalCode;
     }
   }
 

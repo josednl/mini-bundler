@@ -4,6 +4,10 @@ export interface Module {
   transformedCode: string;
   dependencies: Set<string>; // Set of absolute paths
   isExternal: boolean;
+  exports: Set<string>;
+  imports: Map<string, Set<string>>; // dependencyPath -> Set of imported symbols
+  reExports: Map<string, { source: string, local: string }>; // exportName -> { specifier, originalName }
+  usedExports: Set<string>;
 }
 
 export interface BundleOptions {
