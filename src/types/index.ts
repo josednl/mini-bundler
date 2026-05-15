@@ -2,6 +2,7 @@ export interface Module {
   id: string; // Absolute path
   originalCode: string;
   transformedCode: string;
+  sourceMap?: any;
   dependencies: Set<string>; // Set of absolute paths
   isExternal: boolean;
   exports: Set<string>;

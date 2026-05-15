@@ -149,12 +149,16 @@ The bundler should support:
 - [x] **Output Formats**: Add ESM and CommonJS emitters (Basic CJS runtime).
 - [x] **Asset Handling**: Support JSON, CSS, and static assets.
 - [x] **Tree Shaking**: Remove unused exports/imports.
-- [ ] **Source Maps**: Generate source maps for debugging.
+- [x] **Source Maps**: Generate source maps for debugging.
 - [ ] **Watch Mode**: Rebuild automatically on file changes.
 - [ ] **Plugin Ecosystem**: Create official example plugins.
 - [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-15]: Source Maps Implemented
+-> Reason: Implemented source map generation and merging (Original TS -> Transformed CJS -> Bundle) using magic-string and @ampproject/remapping.
+-> Implication: The bundler now produces functional source maps that allow debugging the original TypeScript source directly from the browser or Node.js.
 
 - [2026-05-14]: Tree Shaking (DCE) Implemented
 -> Reason: Implemented a two-pass Dead Code Elimination strategy that identifies unused exports and removes them using custom TS transformers.

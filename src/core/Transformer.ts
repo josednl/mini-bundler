@@ -9,6 +9,7 @@ export interface AnalysisResult {
 
 export interface TransformResult {
   transformedCode: string;
+  sourceMap?: any;
 }
 
 export class Transformer {
@@ -139,12 +140,17 @@ export class Transformer {
   /**
    * Transpiles code and removes unused exports.
    */
-  transform(code: string, fileName: string, usedExports: Set<string>): TransformResult {
+  transform(
+    code: string, 
+    fileName: string, 
+    usedExports: Set<string>,
+    pathOverrides?: Map<string, string>
+  ): TransformResult {
     const virtualFileName = fileName.match(/\.(ts|js|tsx|jsx)$/) 
       ? fileName 
       : `${fileName}.ts`;
 
-    const customTransformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+    const treeShakingTransformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
       return (sourceFile) => {
         const visitor = (node: ts.Node): ts.Node | undefined => {
           if (this.isExported(node)) {
@@ -159,21 +165,13 @@ export class Transformer {
                 .map(decl => (decl.name as ts.Identifier).text);
             }
 
-            // If none of the exported names are used, remove the export modifier
-            // or even the whole declaration if we want full DCE.
-            // For this project, we'll remove the export modifier and the declaration
-            // if it's not used externally.
             const isAnyNameUsed = names.some(name => usedExports.has(name));
             
             if (!isAnyNameUsed && names.length > 0) {
-              // If it's the entry file, we might want to keep everything, 
-              // but typically we'll only keep what's used.
-              // For simplicity: remove the node entirely.
               return undefined;
             }
           }
 
-          // Handle 'export { x }' or 'export default x'
           if (ts.isExportDeclaration(node) && node.exportClause && ts.isNamedExports(node.exportClause)) {
             const usedElements = node.exportClause.elements.filter(el => usedExports.has(el.name.text));
             if (usedElements.length === 0) return undefined;
@@ -197,16 +195,77 @@ export class Transformer {
       };
     };
 
+    const pathRemappingTransformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+      return (sourceFile) => {
+        const visitor = (node: ts.Node): ts.Node => {
+          if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+            if (node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+              const specifier = node.moduleSpecifier.text;
+              const resolvedPath = pathOverrides?.get(specifier);
+              if (resolvedPath) {
+                const newSpecifier = ts.factory.createStringLiteral(resolvedPath);
+                if (ts.isImportDeclaration(node)) {
+                  return ts.factory.updateImportDeclaration(
+                    node,
+                    node.modifiers,
+                    node.importClause,
+                    newSpecifier,
+                    node.attributes
+                  );
+                } else {
+                  return ts.factory.updateExportDeclaration(
+                    node,
+                    node.modifiers,
+                    node.isTypeOnly,
+                    node.exportClause,
+                    newSpecifier,
+                    node.attributes
+                  );
+                }
+              }
+            }
+          }
+          
+          // Dynamic import()
+          if (
+            ts.isCallExpression(node) &&
+            node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+            node.arguments.length > 0 &&
+            ts.isStringLiteral(node.arguments[0])
+          ) {
+            const specifier = (node.arguments[0] as ts.StringLiteral).text;
+            const resolvedPath = pathOverrides?.get(specifier);
+            if (resolvedPath) {
+              return ts.factory.updateCallExpression(
+                node,
+                node.expression,
+                node.typeArguments,
+                [ts.factory.createStringLiteral(resolvedPath)]
+              );
+            }
+          }
+
+          return ts.visitEachChild(node, visitor, context);
+        };
+        return ts.visitNode(sourceFile, visitor) as ts.SourceFile;
+      };
+    };
+
     const result = ts.transpileModule(code, {
-      compilerOptions: this.compilerOptions,
+      compilerOptions: {
+        ...this.compilerOptions,
+        sourceMap: true,
+        inlineSources: true,
+      },
       fileName: virtualFileName,
       transformers: {
-        before: [customTransformer]
+        before: [treeShakingTransformer, pathRemappingTransformer]
       }
     });
 
     return {
       transformedCode: result.outputText,
+      sourceMap: result.sourceMapText ? JSON.parse(result.sourceMapText) : undefined,
     };
   }
 

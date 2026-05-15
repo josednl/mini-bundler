@@ -24,8 +24,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3",
     "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
     "vitest": "^1.2.1"
+  },
+  "dependencies": {
+    "@ampproject/remapping": "^2.3.0",
+    "magic-string": "^0.30.21"
   }
 }

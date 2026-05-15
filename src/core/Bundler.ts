@@ -196,35 +196,30 @@ export class Bundler {
 
   private async transformModules(): Promise<void> {
     for (const module of this.graph.getallModules()) {
-      // Re-transform with tree shaking info
-      const { transformedCode } = this.transformer.transform(module.originalCode, module.id, module.usedExports);
-      
-      let finalCode = transformedCode;
-
-      // Remap dependencies to absolute paths (same as before but now in the final pass)
-      // We need to find the original specifiers. We can reconstruct them or store them.
-      // For now, let's use a simpler approach: the Transformer already has the dependencies.
-      // Actually, we can just do the same regex replacement on the final code.
-      
-      // We need to know which specifier resolved to which path.
-      // Let's re-run the resolution logic or store it in Module.
-      // I'll re-resolve for simplicity in this educational version.
-
+      // Prepare path remapping
+      const pathOverrides = new Map<string, string>();
       const { dependencies } = this.transformer.analyze(module.originalCode, module.id);
+      
       for (const specifier of dependencies) {
         let resolvedPath = await this.pluginContainer.resolveId(specifier, module.id);
         if (!resolvedPath) {
           resolvedPath = this.resolver.resolve(specifier, module.id).path ?? null;
         }
-
         if (resolvedPath) {
-          const escapedSpecifier = specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`(['"])${escapedSpecifier}\\1`, 'g');
-          finalCode = finalCode.replace(regex, `$1${resolvedPath}$1`);
+          pathOverrides.set(specifier, resolvedPath);
         }
       }
 
-      module.transformedCode = finalCode;
+      // Re-transform with tree shaking info and path remapping
+      const { transformedCode, sourceMap } = this.transformer.transform(
+        module.originalCode, 
+        module.id, 
+        module.usedExports,
+        pathOverrides
+      );
+      
+      module.transformedCode = transformedCode;
+      module.sourceMap = sourceMap;
     }
   }
 
