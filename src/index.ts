@@ -18,6 +18,7 @@ Options:
   -h, --help           Show this help message
   -v, --version        Show version information
   -o, --outDir <dir>   Output directory (default: dist)
+  -w, --watch          Watch mode: rebuild on file changes
     `);
     process.exit(0);
   }
@@ -27,7 +28,16 @@ Options:
     process.exit(0);
   }
 
-  const entryFile = args[0];
+  const isWatch = args.includes('--watch') || args.includes('-w');
+  
+  const outDirIndex = args.indexOf('--outDir') !== -1 ? args.indexOf('--outDir') : args.indexOf('-o');
+  const outDirValue = outDirIndex !== -1 ? args[outDirIndex + 1] : null;
+
+  const entryFile = args.find(arg => 
+    !arg.startsWith('-') && 
+    arg !== outDirValue
+  );
+  
   if (!entryFile) {
     console.error('Error: No entry file provided.');
     process.exit(1);
@@ -40,8 +50,7 @@ Options:
     process.exit(1);
   }
 
-  const outDirIndex = args.indexOf('--outDir') !== -1 ? args.indexOf('--outDir') : args.indexOf('-o');
-  const outDir = outDirIndex !== -1 ? args[outDirIndex + 1] : 'dist';
+  const outDir = outDirValue || 'dist';
 
   console.log(`Bundling starting from: ${absoluteEntryPath}`);
   
@@ -53,9 +62,13 @@ Options:
     ]);
     await bundler.bundle({
       entry: absoluteEntryPath,
-      outDir: resolve(process.cwd(), outDir)
+      outDir: resolve(process.cwd(), outDir),
+      watch: isWatch
     });
-    console.log(`Bundle generated successfully in ${outDir}/bundle.js`);
+    
+    if (!isWatch) {
+      console.log(`Bundle generated successfully in ${outDir}/bundle.js`);
+    }
   } catch (error) {
     console.error('Bundling failed:', error);
     process.exit(1);

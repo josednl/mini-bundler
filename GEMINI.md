@@ -150,11 +150,15 @@ The bundler should support:
 - [x] **Asset Handling**: Support JSON, CSS, and static assets.
 - [x] **Tree Shaking**: Remove unused exports/imports.
 - [x] **Source Maps**: Generate source maps for debugging.
-- [ ] **Watch Mode**: Rebuild automatically on file changes.
+- [x] **Watch Mode**: Rebuild automatically on file changes.
 - [ ] **Plugin Ecosystem**: Create official example plugins.
 - [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-17]: Watch Mode Implemented
+-> Reason: Added a simple and efficient watch mode using Node.js native `fs.watch` and a debounce mechanism.
+-> Implication: Developers can now work more efficiently with automatic rebuilds on file changes. The implementation remains minimalist and educational, avoiding heavy dependencies like chokidar.
 
 - [2026-05-15]: Source Maps Implemented
 -> Reason: Implemented source map generation and merging (Original TS -> Transformed CJS -> Bundle) using magic-string and @ampproject/remapping.

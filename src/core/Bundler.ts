@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, watch, type FSWatcher } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { Resolver } from './Resolver.js';
 import { Transformer } from './Transformer.js';
@@ -14,6 +14,9 @@ export class Bundler {
   private graph: ModuleGraph;
   private pluginContainer: PluginContainer;
   private emitter: Emitter;
+  private watchers = new Map<string, FSWatcher>();
+  private isRebuilding = false;
+  private debounceTimer: NodeJS.Timeout | null = null;
 
   constructor(plugins: Plugin[] = []) {
     this.resolver = new Resolver();
@@ -30,6 +33,21 @@ export class Bundler {
     if (options.plugins) {
       this.pluginContainer = new PluginContainer(options.plugins);
     }
+
+    const bundle = await this.internalBundle(options);
+
+    if (options.watch) {
+      this.startWatch(options);
+    }
+
+    return bundle;
+  }
+
+  private async internalBundle(options: BundleOptions): Promise<string> {
+    const entry = normalizePath(options.entry);
+    
+    // Reset graph for each bundle run
+    this.graph = new ModuleGraph();
 
     // Phase 1: Build Graph and Analyze
     await this.buildGraph(entry);
@@ -53,6 +71,64 @@ export class Bundler {
     }
 
     return bundle;
+  }
+
+  private startWatch(options: BundleOptions): void {
+    const updateWatchers = () => {
+      const modules = this.graph.getallModules();
+      const currentPaths = new Set(modules.map(m => m.id));
+
+      // Remove watchers for files no longer in the graph
+      for (const [path, watcher] of this.watchers) {
+        if (!currentPaths.has(path)) {
+          watcher.close();
+          this.watchers.delete(path);
+        }
+      }
+
+      // Add watchers for new files
+      for (const path of currentPaths) {
+        if (!this.watchers.has(path)) {
+          try {
+            const watcher = watch(path, (event) => {
+              if (event === 'change') {
+                this.triggerRebuild(options, updateWatchers);
+              }
+            });
+            this.watchers.set(path, watcher);
+          } catch (err) {
+            console.warn(`Could not watch file: ${path}`, err);
+          }
+        }
+      }
+    };
+
+    updateWatchers();
+    console.log('\nWatching for changes...');
+  }
+
+  private triggerRebuild(options: BundleOptions, onComplete: () => void): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    this.debounceTimer = setTimeout(async () => {
+      if (this.isRebuilding) return;
+      this.isRebuilding = true;
+
+      console.log('\nChange detected, rebuilding...');
+      const start = Date.now();
+      try {
+        await this.internalBundle(options);
+        onComplete();
+        const duration = Date.now() - start;
+        console.log(`Rebuild complete in ${duration}ms.`);
+      } catch (err) {
+        console.error('Rebuild failed:', err);
+      } finally {
+        this.isRebuilding = false;
+      }
+    }, 100);
   }
 
   private async buildGraph(entryPath: string): Promise<void> {
@@ -225,5 +301,16 @@ export class Bundler {
 
   getGraph(): ModuleGraph {
     return this.graph;
+  }
+
+  close(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    for (const watcher of this.watchers.values()) {
+      watcher.close();
+    }
+    this.watchers.clear();
   }
 }

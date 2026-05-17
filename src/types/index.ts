@@ -15,6 +15,7 @@ export interface BundleOptions {
   entry: string;
   outDir?: string;
   plugins?: Plugin[];
+  watch?: boolean;
 }
 
 export interface Plugin {
