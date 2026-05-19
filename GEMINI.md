@@ -151,10 +151,14 @@ The bundler should support:
 - [x] **Tree Shaking**: Remove unused exports/imports.
 - [x] **Source Maps**: Generate source maps for debugging.
 - [x] **Watch Mode**: Rebuild automatically on file changes.
-- [ ] **Plugin Ecosystem**: Create official example plugins.
+- [x] **Plugin Ecosystem**: Create official example plugins.
 - [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-19]: Plugin Ecosystem Expanded
+-> Reason: Added official example plugins: `aliasPlugin`, `replacePlugin`, and `virtualPlugin`.
+-> Implication: Users can now easily perform path aliasing, string replacements, and load modules from virtual sources. These plugins serve as practical examples of how to extend the bundler.
 
 - [2026-05-17]: Watch Mode Implemented
 -> Reason: Added a simple and efficient watch mode using Node.js native `fs.watch` and a debounce mechanism.

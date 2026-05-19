@@ -1,7 +1,9 @@
 import MagicString, { Bundle } from 'magic-string';
-import remapping from '@ampproject/remapping';
+import _remapping from '@ampproject/remapping';
 import type { ModuleGraph } from './ModuleGraph.js';
 import { normalizePath } from '../utils/path.js';
+
+const remapping = (_remapping as any).default || _remapping;
 
 export class Emitter {
   /**
@@ -63,7 +65,7 @@ export class Emitter {
     // 2. Chain with the TS maps (Original Source -> Transformed Code -> Bundle)
     const mergedMap = remapping(
       bundleMap as any,
-      (file) => {
+      (file: string) => {
         if (file.endsWith('?bundled')) {
           const originalId = file.slice(0, -8);
           const module = graph.getModule(originalId);
