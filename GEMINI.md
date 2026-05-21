@@ -152,9 +152,13 @@ The bundler should support:
 - [x] **Source Maps**: Generate source maps for debugging.
 - [x] **Watch Mode**: Rebuild automatically on file changes.
 - [x] **Plugin Ecosystem**: Create official example plugins.
-- [ ] **Documentation & Examples**: Create educational examples explaining bundler internals.
+- [x] **Documentation & Examples**: Create educational examples explaining bundler internals.
 
 ## Evolution Notes
+
+- [2026-05-21]: Documentation & Examples Completed
+-> Reason: Created comprehensive internal documentation and multiple illustrative examples.
+-> Implication: The project is now fully educational, providing clear entry points for anyone wanting to understand the inner workings of a modern bundler.
 
 - [2026-05-19]: Plugin Ecosystem Expanded
 -> Reason: Added official example plugins: `aliasPlugin`, `replacePlugin`, and `virtualPlugin`.
